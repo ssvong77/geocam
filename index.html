@@ -3,320 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GeoCam Stamped App Pro</title>
+    <title>GPS Cam Studio - WebintoApp</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome for icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom styling for immersive mobile experience -->
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         body, html {
-            height: 100%;
             margin: 0;
             padding: 0;
-            background-color: #0b0f19;
-            color: #f8fafc;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
-        }
-        .app-container {
-            position: relative;
             width: 100%;
             height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            overflow: hidden;
+            background-color: #000;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         }
-        .camera-viewport {
+        #camera-container {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 0;
-            background: #000;
-            overflow: hidden;
+            z-index: 1;
         }
-        #cameraStream {
+        #video-element {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .ui-overlay {
-            position: relative;
-            z-index: 10;
+        .overlay-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
+            z-index: 2;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 0.75rem;
-            pointer-events: none;
+            padding: 15px;
+            pointer-events: none; /* Permite que los clicks atraviesen el fondo hacia el video */
         }
-        .interactive-el {
-            pointer-events: auto;
+        .interactive-panel {
+            pointer-events: auto; /* Reactiva clicks solo en los controles */
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 1rem;
-            padding: 0.75rem 0.9rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        /* Estilo personalizado para el título y texto de la Línea 1 */
+        .label-custom-title {
+            color: #38bdf8; /* Azul brillante moderno */
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
         }
-        .badge-gps {
-            font-size: 0.75rem;
-            padding: 0.4rem 0.75rem;
-            border-radius: 50rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
+        .form-control-custom {
+            background-color: rgba(255, 255, 255, 0.9) !important;
+            border: none;
+            color: #0f172a !important;
+            font-weight: 500;
+            border-radius: 10px;
         }
-        .shutter-btn {
+        .form-control-custom:focus {
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.4);
+            background-color: #fff !important;
+        }
+        .btn-capture {
             width: 75px;
             height: 75px;
             border-radius: 50%;
             background: #ffffff;
-            border: 4px solid rgba(255, 255, 255, 0.6);
-            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+            border: 4px solid #38bdf8;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.1s ease, background-color 0.2s;
             cursor: pointer;
         }
-        .shutter-btn:active {
+        .btn-capture:active {
             transform: scale(0.92);
-            background: #cbd5e1;
+            background: #e2e8f0;
         }
-        .shutter-inner {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: 2px solid #0f172a;
-            background: #ffffff;
-        }
-        .modal-content {
-            background-color: #1e293b;
-            color: #f8fafc;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .form-control, .form-control:focus {
-            background-color: rgba(15, 23, 42, 0.7);
-            border-color: rgba(255, 255, 255, 0.2);
-            color: #fff;
-        }
-        .form-control::placeholder {
-            color: #94a3b8;
-        }
-        .telemetry-live-box {
+        .badge-gps {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #e2e8f0;
             font-size: 0.75rem;
-            background: rgba(2, 6, 23, 0.65);
-            border-radius: 0.5rem;
-            padding: 0.4rem 0.6rem;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            line-height: 1.3;
+            padding: 6px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(6px);
+        }
+        #canvas-output {
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <!-- 1. Background Camera Stream -->
-        <div class="camera-viewport">
-            <video id="cameraStream" autoplay playsinline muted></video>
-        </div>
-
-        <!-- Hidden canvas for snapshot rendering -->
-        <canvas id="snapshotCanvas" style="display: none;"></canvas>
-
-        <!-- Main UI Layer -->
-        <div class="ui-overlay">
-            
-            <!-- Top Status Bar -->
-            <div class="d-flex justify-content-between align-items-center interactive-el glass-panel py-2 px-3">
-                <div class="d-flex align-items-center gap-2">
-                    <span id="gpsStatusBadge" class="badge-gps bg-warning text-dark">
-                        <i class="fa-solid fa-location-crosshairs fa-spin"></i> Buscando GPS...
-                    </span>
-                </div>
-                <div class="d-flex gap-2">
-                    <button id="btnSwitchCamera" class="btn btn-sm btn-dark text-light border-secondary rounded-circle" style="width: 38px; height: 38px;" title="Cambiar Cámara">
-                        <i class="fa-solid fa-camera-rotate"></i>
-                    </button>
-                    <button id="btnRefreshGps" class="btn btn-sm btn-dark text-light border-secondary rounded-circle" style="width: 38px; height: 38px;" title="Actualizar GPS">
-                        <i class="fa-solid fa-rotate"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Bottom Control Panel -->
-            <div class="d-flex flex-column gap-2 mb-1">
-                
-                <!-- 2 & 4. Information Field & Live 6-Line Telemetry Preview -->
-                <div class="interactive-el glass-panel d-flex flex-column gap-2">
-                    <div>
-                        <label for="txtDescription" class="form-label small fw-semibold text-muted mb-1">
-                            <i class="fa-solid fa-pen-to-square text-info"></i> Línea 1: Información / Descripción
-                        </label>
-                        <input type="text" id="txtDescription" class="form-control form-control-sm" placeholder="Ej: Auditoría operativa / Zona Norte..." autocomplete="off">
-                    </div>
-
-                    <!-- Live Telemetry Preview in 6 Separate Lines -->
-                    <div class="telemetry-live-box d-flex flex-column gap-1 font-monospace">
-                        <div class="text-info"><i class="fa-solid fa-calendar-days"></i> <span id="lblLiveDate">Línea 2: Fecha: --/--/----</span></div>
-                        <div class="text-info"><i class="fa-solid fa-clock"></i> <span id="lblLiveTime">Línea 3: Hora: --:--:--</span></div>
-                        <div class="text-warning"><i class="fa-solid fa-gauge-high"></i> <span id="lblLiveSpeed">Línea 4: Velocidad: 0.0 km/h</span></div>
-                        <div class="text-success"><i class="fa-solid fa-location-crosshairs"></i> <span id="lblLiveLat">Línea 5: Lat: --</span></div>
-                        <div class="text-success"><i class="fa-solid fa-location-crosshairs"></i> <span id="lblLiveLng">Línea 6: Lng: --</span></div>
-                    </div>
-                </div>
-
-                <!-- 5. Action Bar & Shutter Button -->
-                <div class="d-flex justify-content-around align-items-center interactive-el glass-panel py-2">
-                    <button id="btnInfoModal" class="btn btn-outline-light rounded-circle border-0 text-light" style="width: 45px; height: 45px;" title="Ayuda e Info">
-                        <i class="fa-solid fa-circle-info fa-lg"></i>
-                    </button>
-                    
-                    <!-- Shutter Capture Button -->
-                    <div id="btnCapture" class="shutter-btn" title="Tomar Foto y Estampar 6 Líneas">
-                        <div class="shutter-inner"></div>
-                    </div>
-
-                    <button id="btnGalleryInfo" class="btn btn-outline-light rounded-circle border-0 text-light" style="width: 45px; height: 45px;" title="Galería">
-                        <i class="fa-solid fa-images fa-lg"></i>
-                    </button>
-                </div>
-
-            </div>
-        </div>
+    <!-- Visor de Cámara en Pantalla Completa -->
+    <div id="camera-container">
+        <video id="video-element" autoplay playsinline muted></video>
     </div>
 
-    <!-- Preview & Download Modal -->
+    <!-- Canvas Oculto para Procesar la Imagen Estampada -->
+    <canvas id="canvas-output"></canvas>
+
+    <!-- Interfaz de Usuario Superpuesta (UI) -->
+    <div class="overlay-ui">
+        
+        <!-- Estado de GPS Superior -->
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div id="gps-status" class="badge-gps">
+                <i class="bi bi-geo-alt-fill text-danger me-1"></i> Buscando GPS...
+            </div>
+            <button id="btn-switch-camera" class="badge-gps border-0" style="cursor: pointer;">
+                <i class="bi bi-camera-reels-fill text-info me-1"></i> Cambiar Cámara
+            </button>
+        </div>
+
+        <!-- Panel Inferior: Solo Línea 1 (Información / Descripción) + Botón Disparador -->
+        <div class="interactive-panel mb-2">
+            <div class="mb-3">
+                <label for="input-info" class="form-label label-custom-title mb-1">
+                    <i class="bi bi-pencil-square me-1"></i> Información / Descripción (Línea 1):
+                </label>
+                <input type="text" id="input-info" class="form-control form-control-custom" placeholder="Ej: Auditoría de obra - Sector Norte">
+            </div>
+
+            <div class="d-flex justify-content-center align-items-center">
+                <button id="btn-take-photo" class="btn-capture" title="Tomar Foto">
+                    <i class="bi bi-camera-fill text-dark fs-3"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal de Previsualización y Descarga -->
     <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-            <div class="modal-content glass-panel border-0">
-                <div class="modal-header border-secondary py-2">
-                    <h5 class="modal-title fs-6"><i class="fa-solid fa-stamp text-success"></i> Foto Estampada (6 Líneas)</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="bi bi-image text-info me-2"></i> Foto Estampada</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center p-2">
-                    <img id="previewImage" src="" alt="Foto con Estampado" class="img-fluid rounded shadow-sm" style="max-height: 50vh; object-fit: contain;">
-                    <div class="alert alert-secondary mt-2 py-2 small text-start mb-0">
-                        <div class="fw-bold text-info mb-1"><i class="fa-solid fa-circle-check"></i> Sello incrustado con éxito:</div>
-                        <div id="previewMetaText" class="font-monospace small text-light" style="word-break: break-all; white-space: pre-line; line-height: 1.35;"></div>
-                    </div>
+                    <img id="preview-image" src="" alt="Foto Capturada" class="img-fluid rounded border border-secondary shadow" style="max-height: 65vh;">
                 </div>
-                <div class="modal-footer border-secondary justify-content-between py-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary text-light" data-bs-dismiss="modal">
-                        <i class="fa-solid fa-camera"></i> Otra Foto
+                <div class="modal-footer border-secondary justify-content-between">
+                    <button type="button" class="btn btn-outline-light px-4" data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left me-1"></i> Repetir
                     </button>
-                    <a id="btnDownloadImage" href="#" class="btn btn-sm btn-success px-4" download="geocam_registro.jpg">
-                        <i class="fa-solid fa-download"></i> Descargar Imagen
+                    <a id="btn-download" href="#" class="btn btn-info text-dark fw-bold px-4">
+                        <i class="bi bi-download me-1"></i> Descargar Foto
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Info / Help Modal -->
-    <div class="modal fade" id="infoModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title fs-6"><i class="fa-solid fa-circle-info text-info"></i> GeoCam Stamped App Pro</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body small">
-                    <p>Configurada para WebintoApp. Cada captura estampa exactamente <strong>6 líneas independientes</strong> en el banner inferior:</p>
-                    <ul class="list-unstyled mb-0 gap-1 d-flex flex-column font-monospace">
-                        <li><span class="text-info">Línea 1:</span> Información / Descripción</li>
-                        <li><span class="text-info">Línea 2:</span> Fecha: DD/MM/YYYY</li>
-                        <li><span class="text-info">Línea 3:</span> Hora: HH:MM:SS</li>
-                        <li><span class="text-warning">Línea 4:</span> Velocidad: 0.0 km/h</li>
-                        <li><span class="text-success">Línea 5:</span> Lat: 0.000000</li>
-                        <li><span class="text-success">Línea 6:</span> Lng: 0.000000</li>
-                    </ul>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-dismiss="modal">Entendido</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Custom Notification Modal (Replacing alert) -->
-    <div class="modal fade" id="msgModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content text-center p-3">
-                <div id="msgIcon" class="fs-2 mb-2 text-warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                <p id="msgText" class="mb-3 small">Mensaje del sistema</p>
-                <button type="button" class="btn btn-sm btn-primary w-100" data-bs-dismiss="modal">Aceptar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS Bundle -->
+    <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        let currentStream = null;
-        let useFrontCamera = false;
-        let currentPosition = null;
-        let gpsWatchId = null;
+        let videoStream = null;
+        let currentFacingMode = 'environment'; // Cámara trasera por defecto
+        let currentGPSData = {
+            lat: 0,
+            lng: 0,
+            speed: 0,
+            hasFix: false
+        };
 
-        const videoElement = document.getElementById('cameraStream');
-        const canvasElement = document.getElementById('snapshotCanvas');
-        const gpsStatusBadge = document.getElementById('gpsStatusBadge');
-        const txtDescription = document.getElementById('txtDescription');
-
-        // Live Telemetry UI elements
-        const lblLiveDate = document.getElementById('lblLiveDate');
-        const lblLiveTime = document.getElementById('lblLiveTime');
-        const lblLiveSpeed = document.getElementById('lblLiveSpeed');
-        const lblLiveLat = document.getElementById('lblLiveLat');
-        const lblLiveLng = document.getElementById('lblLiveLng');
-
+        const videoElement = document.getElementById('video-element');
+        const gpsStatus = document.getElementById('gps-status');
+        const inputInfo = document.getElementById('input-info');
+        const btnTakephoto = document.getElementById('btn-take-photo');
+        const btnSwitchCamera = document.getElementById('btn-switch-camera');
+        const canvasOutput = document.getElementById('canvas-output');
         const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
-        const infoModal = new bootstrap.Modal(document.getElementById('infoModal'));
-        const msgModal = new bootstrap.Modal(document.getElementById('msgModal'));
+        const previewImage = document.getElementById('preview-image');
+        const btnDownload = document.getElementById('btn-download');
 
-        // 2. Persistence in localStorage
-        if (localStorage.getItem('geocam_last_description')) {
-            txtDescription.value = localStorage.getItem('geocam_last_description');
-        }
-
-        txtDescription.addEventListener('input', () => {
-            localStorage.setItem('geocam_last_description', txtDescription.value);
+        // Cargar texto guardado previamente en LocalStorage si existe
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedInfo = localStorage.getItem('gps_cam_info');
+            if (savedInfo) {
+                inputInfo.value = savedInfo;
+            }
+            initCamera();
+            initGPS();
         });
 
-        function showCustomMessage(text, type = 'warning') {
-            const iconEl = document.getElementById('msgIcon');
-            const textEl = document.getElementById('msgText');
-            textEl.textContent = text;
-            if(type === 'success') {
-                iconEl.className = 'fs-2 mb-2 text-success';
-                iconEl.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
-            } else if(type === 'error') {
-                iconEl.className = 'fs-2 mb-2 text-danger';
-                iconEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
-            } else {
-                iconEl.className = 'fs-2 mb-2 text-warning';
-                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
-            }
-            msgModal.show();
-        }
+        // Guardar automáticamente en LocalStorage al escribir
+        inputInfo.addEventListener('input', () => {
+            localStorage.setItem('gps_cam_info', inputInfo.value);
+        });
 
-        // 1. Initialize camera stream with rear camera priority
+        // Inicializar Cámara Web / Móvil
         async function initCamera() {
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
             }
 
             const constraints = {
                 video: {
-                    facingMode: useFrontCamera ? 'user' : { ideal: 'environment' },
+                    facingMode: currentFacingMode,
                     width: { ideal: 1920 },
                     height: { ideal: 1080 }
                 },
@@ -324,233 +222,160 @@
             };
 
             try {
-                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-                videoElement.srcObject = currentStream;
-                await videoElement.play();
-            } catch (err) {
-                console.warn("Error con alta resolución, intentando fallback estándar:", err);
-                try {
-                    currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                    videoElement.srcObject = currentStream;
-                    await videoElement.play();
-                } catch (fallbackErr) {
-                    showCustomMessage("No se pudo acceder a la cámara. Compruebe los permisos.", "error");
-                }
+                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = videoStream;
+                videoElement.play();
+            } catch (error) {
+                console.error("Error al acceder a la cámara:", error);
+                alert("No se pudo acceder a la cámara. Asegúrese de otorgar los permisos necesarios.");
             }
         }
 
-        // 3. Initialize GPS geolocation in real-time
-        function initGeolocation() {
-            if (!navigator.geolocation) {
-                gpsStatusBadge.className = 'badge-gps bg-danger text-white';
-                gpsStatusBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> GPS no soportado';
-                lblLiveLat.textContent = 'Línea 5: Lat: N/D';
-                lblLiveLng.textContent = 'Línea 6: Lng: N/D';
-                return;
-            }
-
-            gpsStatusBadge.className = 'badge-gps bg-warning text-dark';
-            gpsStatusBadge.innerHTML = '<i class="fa-solid fa-location-crosshairs fa-spin"></i> Buscando GPS...';
-
-            const options = {
-                enableHighAccuracy: true,
-                timeout: 20000,
-                maximumAge: 0
-            };
-
-            if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
-
-            gpsWatchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    currentPosition = position;
-                    updateTelemetryUI();
-                },
-                (error) => {
-                    console.warn("GPS Warning:", error.message);
-                    gpsStatusBadge.className = 'badge-gps bg-danger text-white';
-                    gpsStatusBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Sin Señal GPS';
-                    lblLiveLat.textContent = 'Línea 5: Lat: Sin señal';
-                    lblLiveLng.textContent = 'Línea 6: Lng: Sin señal';
-                },
-                options
-            );
-        }
-
-        // Real-time telemetry updater loop
-        function updateTelemetryUI() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-            const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-            lblLiveDate.textContent = `Línea 2: Fecha: ${dateStr}`;
-            lblLiveTime.textContent = `Línea 3: Hora: ${timeStr}`;
-
-            let speedVal = "0.0 km/h";
-            let latStr = "Buscando...";
-            let lngStr = "Buscando...";
-
-            if (currentPosition) {
-                const lat = currentPosition.coords.latitude.toFixed(6);
-                const lng = currentPosition.coords.longitude.toFixed(6);
-
-                if (currentPosition.coords.speed !== null && currentPosition.coords.speed >= 0) {
-                    speedVal = (currentPosition.coords.speed * 3.6).toFixed(1) + " km/h";
-                }
-
-                gpsStatusBadge.className = 'badge-gps bg-success text-white';
-                gpsStatusBadge.innerHTML = `<i class="fa-solid fa-location-dot"></i> GPS Activo (${lat}, ${lng})`;
-
-                latStr = lat;
-                lngStr = lng;
-            }
-
-            lblLiveSpeed.textContent = `Línea 4: Velocidad: ${speedVal}`;
-            lblLiveLat.textContent = `Línea 5: Lat: ${latStr}`;
-            lblLiveLng.textContent = `Línea 6: Lng: ${lngStr}`;
-        }
-
-        setInterval(updateTelemetryUI, 1000);
-
-        // 5. Capture snapshot and stamp exact 6 lines independently
-        function captureAndStampImage() {
-            if (!videoElement.videoWidth || !videoElement.videoHeight) {
-                showCustomMessage("La cámara aún se está inicializando. Espere un momento.", "warning");
-                return;
-            }
-
-            const canvas = canvasElement;
-            const context = canvas.getContext('2d');
-
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-
-            // Draw current video frame onto canvas
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-            // Gather metadata values
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-            const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            const description = txtDescription.value.trim() || "Sin descripción registrada";
-
-            let speedVal = "0.0 km/h";
-            let latText = "0.000000";
-            let lngText = "0.000000";
-
-            if (currentPosition) {
-                latText = currentPosition.coords.latitude.toFixed(6);
-                lngText = currentPosition.coords.longitude.toFixed(6);
-
-                if (currentPosition.coords.speed !== null && currentPosition.coords.speed >= 0) {
-                    speedVal = (currentPosition.coords.speed * 3.6).toFixed(1) + " km/h";
-                }
-            }
-
-            // Define the 6 explicit lines
-            const line1 = `Información: ${description}`;
-            const line2 = `Fecha: ${dateStr}`;
-            const line3 = `Hora: ${timeStr}`;
-            const line4 = `Velocidad: ${speedVal}`;
-            const line5 = `Lat: ${latText}`;
-            const line6 = `Lng: ${lngText}`;
-
-            // Calculate dynamic sizing for 6 distinct lines
-            const fontSize = Math.max(14, Math.floor(canvas.height / 46));
-            const paddingVertical = Math.floor(fontSize * 0.8);
-            const lineSpacing = Math.floor(fontSize * 1.35);
-            const bannerHeight = (fontSize * 6) + (lineSpacing * 5) + (paddingVertical * 2);
-            const bannerY = canvas.height - bannerHeight;
-
-            // Semi-transparent background banner
-            context.fillStyle = "rgba(11, 15, 25, 0.92)";
-            context.fillRect(0, bannerY, canvas.width, bannerHeight);
-
-            // Top accent line for banner
-            context.strokeStyle = "#38bdf8";
-            context.lineWidth = Math.max(3, Math.floor(canvas.width / 350));
-            context.beginPath();
-            context.moveTo(0, bannerY);
-            context.lineTo(canvas.width, bannerY);
-            context.stroke();
-
-            // Render each of the 6 lines in separate rows
-            const paddingLeft = Math.floor(canvas.width * 0.03);
-            let currentTextY = bannerY + paddingVertical + fontSize;
-
-            context.font = `bold ${fontSize}px 'Segoe UI', Arial, sans-serif`;
-
-            // Line 1: Info (White)
-            context.fillStyle = "#ffffff";
-            context.fillText(line1, paddingLeft, currentTextY);
-
-            // Line 2: Fecha (Cyan)
-            currentTextY += lineSpacing;
-            context.fillStyle = "#38bdf8";
-            context.fillText(line2, paddingLeft, currentTextY);
-
-            // Line 3: Hora (Cyan)
-            currentTextY += lineSpacing;
-            context.fillStyle = "#38bdf8";
-            context.fillText(line3, paddingLeft, currentTextY);
-
-            // Line 4: Velocidad (Yellow/Orange)
-            currentTextY += lineSpacing;
-            context.fillStyle = "#facc15";
-            context.fillText(line4, paddingLeft, currentTextY);
-
-            // Line 5: Lat (Green)
-            currentTextY += lineSpacing;
-            context.fillStyle = "#4ade80";
-            context.fillText(line5, paddingLeft, currentTextY);
-
-            // Line 6: Lng (Green)
-            currentTextY += lineSpacing;
-            context.fillStyle = "#4ade80";
-            context.fillText(line6, paddingLeft, currentTextY);
-
-            // Generate JPEG data URL
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-
-            // Populate preview modal
-            document.getElementById('previewImage').src = dataUrl;
-            
-            const metaSummaryLines = `${line1}\n${line2}\n${line3}\n${line4}\n${line5}\n${line6}`;
-            document.getElementById('previewMetaText').textContent = metaSummaryLines;
-
-            const downloadBtn = document.getElementById('btnDownloadImage');
-            downloadBtn.href = dataUrl;
-            const safeFileName = `GeoCam_${now.toISOString().slice(0,10)}_${now.getHours()}${now.getMinutes()}${now.getSeconds()}.jpg`;
-            downloadBtn.download = safeFileName;
-
-            previewModal.show();
-        }
-
-        // Event Listeners setup
-        document.addEventListener('DOMContentLoaded', () => {
+        // Alternar entre cámara delantera y trasera
+        btnSwitchCamera.addEventListener('click', () => {
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
             initCamera();
-            initGeolocation();
+        });
 
-            document.getElementById('btnCapture').addEventListener('click', () => {
-                captureAndStampImage();
-            });
+        // Inicializar Seguimiento GPS en segundo plano
+        function initGPS() {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.watchPosition(
+                    (position) => {
+                        currentGPSData.lat = position.coords.latitude;
+                        currentGPSData.lng = position.coords.longitude;
+                        // position.coords.speed viene en metros/segundo. Convertimos a km/h (* 3.6)
+                        currentGPSData.speed = position.coords.speed !== null && position.coords.speed >= 0 
+                            ? position.coords.speed * 3.6 
+                            : 0;
+                        currentGPSData.hasFix = true;
 
-            document.getElementById('btnSwitchCamera').addEventListener('click', () => {
-                useFrontCamera = !useFrontCamera;
-                initCamera();
-            });
+                        gpsStatus.innerHTML = `<i class="bi bi-geo-alt-fill text-success me-1"></i> GPS Conectado (${currentGPSData.lat.toFixed(4)}, ${currentGPSData.lng.toFixed(4)})`;
+                    },
+                    (error) => {
+                        console.warn("Error de GPS:", error.message);
+                        gpsStatus.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> Sin señal GPS precisa`;
+                        currentGPSData.hasFix = false;
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 0,
+                        timeout: 10000
+                    }
+                );
+            } else {
+                gpsStatus.innerHTML = `<i class="bi bi-x-circle-fill text-danger me-1"></i> GPS no soportado`;
+            }
+        }
 
-            document.getElementById('btnRefreshGps').addEventListener('click', () => {
-                initGeolocation();
-                showCustomMessage("Buscando actualización de señal GPS...", "success");
-            });
+        // Obtener Fecha formateada (DD/MM/YYYY)
+        function getFormattedDate() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
 
-            document.getElementById('btnInfoModal').addEventListener('click', () => {
-                infoModal.show();
-            });
+        // Obtener Hora formateada (HH:MM:SS)
+        function getFormattedTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
 
-            document.getElementById('btnGalleryInfo').addEventListener('click', () => {
-                showCustomMessage("Las fotos capturadas se guardarán automáticamente en la galería o carpeta de descargas de su dispositivo.", "success");
-            });
+        // Tomar Foto y Estampar las 6 Líneas en el Canvas
+        btnTakephoto.addEventListener('click', () => {
+            if (!videoElement.videoWidth || !videoElement.videoHeight) {
+                alert("La cámara aún no está lista.");
+                return;
+            }
+
+            // Configurar dimensiones reales del canvas basadas en la resolución del video de la cámara
+            canvasOutput.width = videoElement.videoWidth;
+            canvasOutput.height = videoElement.videoHeight;
+            const ctx = canvasOutput.getContext('2d');
+
+            // 1. Dibujar el fotograma actual de la cámara
+            ctx.drawImage(videoElement, 0, 0, canvasOutput.width, canvasOutput.height);
+
+            // Preparar datos para las 6 líneas
+            const infoText = inputInfo.value.trim() || "Sin descripción";
+            const dateText = `Fecha: ${getFormattedDate()}`;
+            const timeText = `Hora: ${getFormattedTime()}`;
+            const speedText = `Velocidad: ${currentGPSData.speed.toFixed(1)} km/h`;
+            const latText = `Lat: ${currentGPSData.hasFix ? currentGPSData.lat.toFixed(6) : 'N/A'}`;
+            const lngText = `Lng: ${currentGPSData.hasFix ? currentGPSData.lng.toFixed(6) : 'N/A'}`;
+
+            // Configurar diseño tipográfico adaptativo al tamaño de la foto
+            const baseFontSize = Math.max(16, Math.floor(canvasOutput.width / 45));
+            const lineSpacing = baseFontSize * 1.45;
+            const padding = baseFontSize * 1.2;
+            const totalLines = 6;
+            const bannerHeight = (totalLines * lineSpacing) + (padding * 2);
+
+            // Coordenadas del banner inferior
+            const bannerX = padding;
+            const bannerY = canvasOutput.height - bannerHeight - padding;
+            const bannerWidth = canvasOutput.width - (padding * 2);
+
+            // 2. Dibujar fondo translúcido tipo placa para el sello
+            ctx.fillStyle = "rgba(15, 23, 42, 0.82)";
+            ctx.roundRect ? ctx.beginPath() || ctx.roundRect(bannerX, bannerY, bannerWidth, bannerHeight, 12) : ctx.fillRect(bannerX, bannerY, bannerWidth, bannerHeight);
+            ctx.fill();
+
+            // Borde sutil brillante alrededor del banner
+            ctx.strokeStyle = "rgba(56, 189, 248, 0.6)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 3. Dibujar las 6 líneas de texto de forma independiente
+            ctx.font = `bold ${baseFontSize}px system-ui, sans-serif`;
+            let currentY = bannerY + padding + baseFontSize;
+
+            // Línea 1: Info / Descripción (Color Cian Destacado)
+            ctx.fillStyle = "#38bdf8";
+            ctx.fillText(`Info: ${infoText}`, bannerX + padding, currentY);
+            currentY += lineSpacing;
+
+            // Línea 2: Fecha (Color Blanco)
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(dateText, bannerX + padding, currentY);
+            currentY += lineSpacing;
+
+            // Línea 3: Hora (Color Blanco)
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(timeText, bannerX + padding, currentY);
+            currentY += lineSpacing;
+
+            // Línea 4: Velocidad (Color Verde Claro)
+            ctx.fillStyle = "#4ade80";
+            ctx.fillText(speedText, bannerX + padding, currentY);
+            currentY += lineSpacing;
+
+            // Línea 5: Lat (Color Amarillo/Naranja)
+            ctx.fillStyle = "#facc15";
+            ctx.fillText(latText, bannerX + padding, currentY);
+            currentY += lineSpacing;
+
+            // Línea 6: Lng (Color Amarillo/Naranja)
+            ctx.fillStyle = "#facc15";
+            ctx.fillText(lngText, bannerX + padding, currentY);
+
+            // 4. Exportar imagen resultante a la vista previa modal
+            const dataUrl = canvasOutput.toDataURL('image/jpeg', 0.92);
+            previewImage.src = dataUrl;
+
+            // Generar enlace de descarga automática con nombre único basado en fecha/hora
+            const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
+            const fileName = `GPS_Foto_${timestamp}.jpg`;
+            btnDownload.href = dataUrl;
+            btnDownload.download = fileName;
+
+            // Mostrar modal de revisión
+            previewModal.show();
         });
     </script>
 </body>
