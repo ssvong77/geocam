@@ -277,7 +277,31 @@
             return `${hours}:${minutes}:${seconds}`;
         }
 
-        // Tomar Foto y Estampar en 2 Columnas con Fuente Ampliada
+        // Función auxiliar para ajustar textos largos en múltiples líneas dentro de un ancho máximo
+        function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let linesCount = 0;
+
+            for (let n = 0; n < words.length; n++) {
+                let testLine = line + words[n] + ' ';
+                let metrics = ctx.measureText(testLine);
+                let testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    ctx.fillText(line, x, y);
+                    line = words[n] + ' ';
+                    y += lineHeight;
+                    linesCount++;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, x, y);
+            linesCount++;
+            return linesCount;
+        }
+
+        // Tomar Foto y Estampar con Ajuste Dinámico de Info y Combinación de Filas
         btnTakephoto.addEventListener('click', () => {
             if (!videoElement.videoWidth || !videoElement.videoHeight) {
                 alert("La cámara aún no está lista.");
@@ -291,25 +315,48 @@
             // 1. Dibujar fotograma de la cámara
             ctx.drawImage(videoElement, 0, 0, canvasOutput.width, canvasOutput.height);
 
-            // Preparar textos
-            const infoText = inputInfo.value.trim() || "Sin descripción";
-            const dateText = `Fecha: ${getFormattedDate()}`;
-            const timeText = `Hora: ${getFormattedTime()}`;
-            const speedText = `Velocidad: ${currentGPSData.speed.toFixed(1)} km/h`;
-            const latText = `Lat: ${currentGPSData.hasFix ? currentGPSData.lat.toFixed(6) : 'N/A'}`;
-            const lngText = `Lng: ${currentGPSData.hasFix ? currentGPSData.lng.toFixed(6) : 'N/A'}`;
+            // Preparar textos combinados
+            const infoText = `Info: ${inputInfo.value.trim() || "Sin descripción"}`;
+            const dateTimeText = `${getFormattedDate()} - ${getFormattedTime()}`;
+            const speedText = `Vel: ${currentGPSData.speed.toFixed(1)} km/h`;
+            const coordsText = currentGPSData.hasFix 
+                ? `Lat: ${currentGPSData.lat.toFixed(5)} | Lng: ${currentGPSData.lng.toFixed(5)}` 
+                : `Lat/Lng: Sin señal GPS`;
 
-            // Configurar diseño de 2 columnas con fuente ampliada (+2 puntos)
+            // Configurar diseño tipográfico
             const baseFontSize = Math.max(20, Math.floor(canvasOutput.width / 38));
             const lineSpacing = baseFontSize * 1.5;
             const padding = baseFontSize * 1.2;
-            const maxRows = 3; 
-            const bannerHeight = (maxRows * lineSpacing) + (padding * 2);
 
             const bannerX = padding;
-            const bannerY = canvasOutput.height - bannerHeight - padding;
             const bannerWidth = canvasOutput.width - (padding * 2);
-            const columnWidth = bannerWidth / 2;
+            const columnWidth = bannerWidth / 2 - padding * 0.5;
+
+            // Configurar fuente para medir líneas de la descripción
+            ctx.font = `bold ${baseFontSize}px system-ui, sans-serif`;
+
+            // Medir cuántas líneas ocupará el texto de Info en la columna izquierda
+            // Creamos un canvas temporal o usamos measureText simulado
+            const words = infoText.split(' ');
+            let testLine = '';
+            let infoLines = 1;
+            for (let n = 0; n < words.length; n++) {
+                let testWidth = ctx.measureText(testLine + words[n] + ' ').width;
+                if (testWidth > columnWidth && n > 0) {
+                    infoLines++;
+                    testLine = words[n] + ' ';
+                } else {
+                    testLine += words[n] + ' ';
+                }
+            }
+
+            // Filas totales requeridas en la columna izquierda: infoLines + 1 (para Fecha/Hora)
+            const totalRowsLeft = infoLines + 1;
+            const totalRowsRight = 2; // Fila 1: Velocidad, Fila 2: Lat/Lng
+            const maxRows = Math.max(totalRowsLeft, totalRowsRight);
+
+            const bannerHeight = (maxRows * lineSpacing) + (padding * 2);
+            const bannerY = canvasOutput.height - bannerHeight - padding;
 
             // 2. Dibujar placa de fondo translúcida
             ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
@@ -320,44 +367,31 @@
             ctx.lineWidth = 2.5;
             ctx.stroke();
 
-            // Configurar fuente grande
-            ctx.font = `bold ${baseFontSize}px system-ui, sans-serif`;
-
-            // --- COLUMNA IZQUIERDA (Info, Fecha, Hora) ---
+            // --- COLUMNA IZQUIERDA (Info multilínea + Fecha/Hora combinadas) ---
             let leftX = bannerX + padding;
             let currentY = bannerY + padding + baseFontSize;
 
-            // Fila 1: Info
+            // Dibujar Info con ajuste de línea automático
             ctx.fillStyle = "#38bdf8";
-            ctx.fillText(`Info: ${infoText}`, leftX, currentY);
-            currentY += lineSpacing;
+            let linesDrawn = wrapText(ctx, infoText, leftX, currentY, columnWidth, lineSpacing);
+            currentY += (linesDrawn * lineSpacing);
 
-            // Fila 2: Fecha
+            // Dibujar Fecha y Hora juntas
             ctx.fillStyle = "#ffffff";
-            ctx.fillText(dateText, leftX, currentY);
-            currentY += lineSpacing;
+            ctx.fillText(dateTimeText, leftX, currentY);
 
-            // Fila 3: Hora
-            ctx.fillStyle = "#ffffff";
-            ctx.fillText(timeText, leftX, currentY);
-
-            // --- COLUMNA DERECHA (Velocidad, Lat, Lng) ---
-            let rightX = bannerX + columnWidth + (padding * 0.5);
-            currentY = bannerY + padding + baseFontSize;
+            // --- COLUMNA DERECHA (Velocidad + Lat/Lng combinadas) ---
+            let rightX = bannerX + bannerWidth / 2 + (padding * 0.5);
+            let rightY = bannerY + padding + baseFontSize;
 
             // Fila 1: Velocidad
             ctx.fillStyle = "#4ade80";
-            ctx.fillText(speedText, rightX, currentY);
-            currentY += lineSpacing;
+            ctx.fillText(speedText, rightX, rightY);
+            rightY += lineSpacing;
 
-            // Fila 2: Lat
+            // Fila 2: Lat y Lng juntas
             ctx.fillStyle = "#facc15";
-            ctx.fillText(latText, rightX, currentY);
-            currentY += lineSpacing;
-
-            // Fila 3: Lng
-            ctx.fillStyle = "#facc15";
-            ctx.fillText(lngText, rightX, currentY);
+            ctx.fillText(coordsText, rightX, rightY);
 
             // 3. Exportar imagen y abrir previsualización
             const dataUrl = canvasOutput.toDataURL('image/jpeg', 0.92);
