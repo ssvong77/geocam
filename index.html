@@ -6,9 +6,9 @@
     <title>GeoCam Stamped App Pro</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome for mobile icons -->
+    <!-- FontAwesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom immersive styling -->
+    <!-- Custom styling for immersive mobile experience -->
     <style>
         body, html {
             height: 100%;
@@ -50,19 +50,19 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 1rem;
+            padding: 0.75rem;
             pointer-events: none;
         }
         .interactive-el {
             pointer-events: auto;
         }
         .glass-panel {
-            background: rgba(15, 23, 42, 0.78);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 1rem;
-            padding: 1rem;
+            padding: 0.75rem 0.9rem;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
         }
         .badge-gps {
@@ -111,17 +111,25 @@
         .form-control::placeholder {
             color: #94a3b8;
         }
+        .telemetry-live-box {
+            font-size: 0.75rem;
+            background: rgba(2, 6, 23, 0.65);
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            line-height: 1.3;
+        }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <!-- Background Camera Stream -->
+        <!-- 1. Background Camera Stream -->
         <div class="camera-viewport">
             <video id="cameraStream" autoplay playsinline muted></video>
         </div>
 
-        <!-- Hidden processing canvas -->
+        <!-- Hidden canvas for snapshot rendering -->
         <canvas id="snapshotCanvas" style="display: none;"></canvas>
 
         <!-- Main UI Layer -->
@@ -145,31 +153,39 @@
             </div>
 
             <!-- Bottom Control Panel -->
-            <div class="d-flex flex-column gap-3 mb-2">
+            <div class="d-flex flex-column gap-2 mb-1">
                 
-                <!-- Description Field Panel -->
-                <div class="interactive-el glass-panel">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <label for="txtDescription" class="form-label small fw-semibold text-muted mb-0">
-                            <i class="fa-solid fa-pen-to-square text-info"></i> Información / Descripción
+                <!-- 2 & 4. Information Field & Live 6-Line Telemetry Preview -->
+                <div class="interactive-el glass-panel d-flex flex-column gap-2">
+                    <div>
+                        <label for="txtDescription" class="form-label small fw-semibold text-muted mb-1">
+                            <i class="fa-solid fa-pen-to-square text-info"></i> Línea 1: Información / Descripción
                         </label>
-                        <span id="speedIndicator" class="badge bg-secondary font-monospace small"><i class="fa-solid fa-gauge-high"></i> 0 km/h</span>
+                        <input type="text" id="txtDescription" class="form-control form-control-sm" placeholder="Ej: Auditoría operativa / Zona Norte..." autocomplete="off">
                     </div>
-                    <input type="text" id="txtDescription" class="form-control form-control-sm" placeholder="Ej: Control de stock / Ubicación A..." autocomplete="off">
+
+                    <!-- Live Telemetry Preview in 6 Separate Lines -->
+                    <div class="telemetry-live-box d-flex flex-column gap-1 font-monospace">
+                        <div class="text-info"><i class="fa-solid fa-calendar-days"></i> <span id="lblLiveDate">Línea 2: Fecha: --/--/----</span></div>
+                        <div class="text-info"><i class="fa-solid fa-clock"></i> <span id="lblLiveTime">Línea 3: Hora: --:--:--</span></div>
+                        <div class="text-warning"><i class="fa-solid fa-gauge-high"></i> <span id="lblLiveSpeed">Línea 4: Velocidad: 0.0 km/h</span></div>
+                        <div class="text-success"><i class="fa-solid fa-location-crosshairs"></i> <span id="lblLiveLat">Línea 5: Lat: --</span></div>
+                        <div class="text-success"><i class="fa-solid fa-location-crosshairs"></i> <span id="lblLiveLng">Línea 6: Lng: --</span></div>
+                    </div>
                 </div>
 
-                <!-- Action Bar -->
-                <div class="d-flex justify-content-around align-items-center interactive-el glass-panel py-3">
-                    <button id="btnInfoModal" class="btn btn-outline-light rounded-circle border-0 text-light" style="width: 50px; height: 50px;" title="Ayuda e Info">
+                <!-- 5. Action Bar & Shutter Button -->
+                <div class="d-flex justify-content-around align-items-center interactive-el glass-panel py-2">
+                    <button id="btnInfoModal" class="btn btn-outline-light rounded-circle border-0 text-light" style="width: 45px; height: 45px;" title="Ayuda e Info">
                         <i class="fa-solid fa-circle-info fa-lg"></i>
                     </button>
                     
                     <!-- Shutter Capture Button -->
-                    <div id="btnCapture" class="shutter-btn" title="Tomar Foto y Estampar Datos">
+                    <div id="btnCapture" class="shutter-btn" title="Tomar Foto y Estampar 6 Líneas">
                         <div class="shutter-inner"></div>
                     </div>
 
-                    <button id="btnGalleryInfo" class="btn btn-outline-light rounded-circle border-0 text-light" style="width: 50px; height: 50px;" title="Galería">
+                    <button id="btnGalleryInfo" class="btn btn-outline-light rounded-circle border-0 text-light" style="width: 45px; height: 45px;" title="Galería">
                         <i class="fa-solid fa-images fa-lg"></i>
                     </button>
                 </div>
@@ -182,18 +198,18 @@
     <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content glass-panel border-0">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title fs-6"><i class="fa-solid fa-stamp text-success"></i> Foto Estampada Generada</h5>
+                <div class="modal-header border-secondary py-2">
+                    <h5 class="modal-title fs-6"><i class="fa-solid fa-stamp text-success"></i> Foto Estampada (6 Líneas)</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body text-center p-2">
-                    <img id="previewImage" src="" alt="Foto con Estampado" class="img-fluid rounded shadow-sm" style="max-height: 58vh; object-fit: contain;">
+                    <img id="previewImage" src="" alt="Foto con Estampado" class="img-fluid rounded shadow-sm" style="max-height: 50vh; object-fit: contain;">
                     <div class="alert alert-secondary mt-2 py-2 small text-start mb-0">
-                        <div class="fw-bold text-info"><i class="fa-solid fa-circle-check"></i> Sello incrustado:</div>
-                        <div id="previewMetaText" class="mt-1 font-monospace small text-light" style="word-break: break-all;"></div>
+                        <div class="fw-bold text-info mb-1"><i class="fa-solid fa-circle-check"></i> Sello incrustado con éxito:</div>
+                        <div id="previewMetaText" class="font-monospace small text-light" style="word-break: break-all; white-space: pre-line; line-height: 1.35;"></div>
                     </div>
                 </div>
-                <div class="modal-footer border-secondary justify-content-between">
+                <div class="modal-footer border-secondary justify-content-between py-2">
                     <button type="button" class="btn btn-sm btn-outline-secondary text-light" data-bs-dismiss="modal">
                         <i class="fa-solid fa-camera"></i> Otra Foto
                     </button>
@@ -210,20 +226,22 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title fs-6"><i class="fa-solid fa-circle-info text-info"></i> GeoCam Stamped App</h5>
+                    <h5 class="modal-title fs-6"><i class="fa-solid fa-circle-info text-info"></i> GeoCam Stamped App Pro</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body small">
-                    <p>Aplicación lista para exportar a **WebintoApp**. Estampa automáticamente en cada captura:</p>
-                    <ul class="list-unstyled mb-0 gap-2 d-flex flex-column">
-                        <li><i class="fa-solid fa-check text-success"></i> <strong>Línea 1:</strong> Información ingresada.</li>
-                        <li><i class="fa-solid fa-check text-success"></i> <strong>Línea 2:</strong> Fecha actual.</li>
-                        <li><i class="fa-solid fa-check text-success"></i> <strong>Línea 3:</strong> Hora exacta.</li>
-                        <li><i class="fa-solid fa-check text-success"></i> <strong>Línea 4:</strong> Velocidad GPS + Coordenadas / Link Maps.</li>
+                    <p>Configurada para WebintoApp. Cada captura estampa exactamente <strong>6 líneas independientes</strong> en el banner inferior:</p>
+                    <ul class="list-unstyled mb-0 gap-1 d-flex flex-column font-monospace">
+                        <li><span class="text-info">Línea 1:</span> Información / Descripción</li>
+                        <li><span class="text-info">Línea 2:</span> Fecha: DD/MM/YYYY</li>
+                        <li><span class="text-info">Línea 3:</span> Hora: HH:MM:SS</li>
+                        <li><span class="text-warning">Línea 4:</span> Velocidad: 0.0 km/h</li>
+                        <li><span class="text-success">Línea 5:</span> Lat: 0.000000</li>
+                        <li><span class="text-success">Línea 6:</span> Lng: 0.000000</li>
                     </ul>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Entendido</button>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-dismiss="modal">Entendido</button>
                 </div>
             </div>
         </div>
@@ -243,25 +261,28 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Global State variables
         let currentStream = null;
         let useFrontCamera = false;
         let currentPosition = null;
         let gpsWatchId = null;
 
-        // DOM Element references
         const videoElement = document.getElementById('cameraStream');
         const canvasElement = document.getElementById('snapshotCanvas');
         const gpsStatusBadge = document.getElementById('gpsStatusBadge');
-        const speedIndicator = document.getElementById('speedIndicator');
         const txtDescription = document.getElementById('txtDescription');
 
-        // Modals initialization
+        // Live Telemetry UI elements
+        const lblLiveDate = document.getElementById('lblLiveDate');
+        const lblLiveTime = document.getElementById('lblLiveTime');
+        const lblLiveSpeed = document.getElementById('lblLiveSpeed');
+        const lblLiveLat = document.getElementById('lblLiveLat');
+        const lblLiveLng = document.getElementById('lblLiveLng');
+
         const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
         const infoModal = new bootstrap.Modal(document.getElementById('infoModal'));
         const msgModal = new bootstrap.Modal(document.getElementById('msgModal'));
 
-        // Load saved description from localStorage if available
+        // 2. Persistence in localStorage
         if (localStorage.getItem('geocam_last_description')) {
             txtDescription.value = localStorage.getItem('geocam_last_description');
         }
@@ -270,7 +291,6 @@
             localStorage.setItem('geocam_last_description', txtDescription.value);
         });
 
-        // Non-blocking custom alert substitute
         function showCustomMessage(text, type = 'warning') {
             const iconEl = document.getElementById('msgIcon');
             const textEl = document.getElementById('msgText');
@@ -288,7 +308,7 @@
             msgModal.show();
         }
 
-        // Initialize camera stream with rear camera priority
+        // 1. Initialize camera stream with rear camera priority
         async function initCamera() {
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
@@ -308,22 +328,24 @@
                 videoElement.srcObject = currentStream;
                 await videoElement.play();
             } catch (err) {
-                console.warn("Error con alta resolución/cámara trasera, intentando fallback:", err);
+                console.warn("Error con alta resolución, intentando fallback estándar:", err);
                 try {
                     currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                     videoElement.srcObject = currentStream;
                     await videoElement.play();
                 } catch (fallbackErr) {
-                    showCustomMessage("No se pudo acceder a la cámara. Compruebe los permisos de su dispositivo.", "error");
+                    showCustomMessage("No se pudo acceder a la cámara. Compruebe los permisos.", "error");
                 }
             }
         }
 
-        // Initialize GPS geolocation and speed tracking
+        // 3. Initialize GPS geolocation in real-time
         function initGeolocation() {
             if (!navigator.geolocation) {
                 gpsStatusBadge.className = 'badge-gps bg-danger text-white';
                 gpsStatusBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> GPS no soportado';
+                lblLiveLat.textContent = 'Línea 5: Lat: N/D';
+                lblLiveLng.textContent = 'Línea 6: Lng: N/D';
                 return;
             }
 
@@ -341,39 +363,58 @@
             gpsWatchId = navigator.geolocation.watchPosition(
                 (position) => {
                     currentPosition = position;
-                    updateGpsUI();
+                    updateTelemetryUI();
                 },
                 (error) => {
-                    console.warn("Advertencia GPS:", error.message);
+                    console.warn("GPS Warning:", error.message);
                     gpsStatusBadge.className = 'badge-gps bg-danger text-white';
                     gpsStatusBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Sin Señal GPS';
+                    lblLiveLat.textContent = 'Línea 5: Lat: Sin señal';
+                    lblLiveLng.textContent = 'Línea 6: Lng: Sin señal';
                 },
                 options
             );
         }
 
-        function updateGpsUI() {
+        // Real-time telemetry updater loop
+        function updateTelemetryUI() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            lblLiveDate.textContent = `Línea 2: Fecha: ${dateStr}`;
+            lblLiveTime.textContent = `Línea 3: Hora: ${timeStr}`;
+
+            let speedVal = "0.0 km/h";
+            let latStr = "Buscando...";
+            let lngStr = "Buscando...";
+
             if (currentPosition) {
                 const lat = currentPosition.coords.latitude.toFixed(6);
                 const lng = currentPosition.coords.longitude.toFixed(6);
-                
-                // Speed in m/s converted to km/h (if available from GPS hardware)
-                let speedKmH = 0;
+
                 if (currentPosition.coords.speed !== null && currentPosition.coords.speed >= 0) {
-                    speedKmH = (currentPosition.coords.speed * 3.6).toFixed(1);
+                    speedVal = (currentPosition.coords.speed * 3.6).toFixed(1) + " km/h";
                 }
 
                 gpsStatusBadge.className = 'badge-gps bg-success text-white';
                 gpsStatusBadge.innerHTML = `<i class="fa-solid fa-location-dot"></i> GPS Activo (${lat}, ${lng})`;
-                
-                speedIndicator.innerHTML = `<i class="fa-solid fa-gauge-high"></i> ${speedKmH} km/h`;
+
+                latStr = lat;
+                lngStr = lng;
             }
+
+            lblLiveSpeed.textContent = `Línea 4: Velocidad: ${speedVal}`;
+            lblLiveLat.textContent = `Línea 5: Lat: ${latStr}`;
+            lblLiveLng.textContent = `Línea 6: Lng: ${lngStr}`;
         }
 
-        // Capture frame and stamp requested watermark data lines
+        setInterval(updateTelemetryUI, 1000);
+
+        // 5. Capture snapshot and stamp exact 6 lines independently
         function captureAndStampImage() {
             if (!videoElement.videoWidth || !videoElement.videoHeight) {
-                showCustomMessage("La cámara aún se está inicializando. Espere un segundo.", "warning");
+                showCustomMessage("La cámara aún se está inicializando. Espere un momento.", "warning");
                 return;
             }
 
@@ -383,84 +424,98 @@
             canvas.width = videoElement.videoWidth;
             canvas.height = videoElement.videoHeight;
 
-            // Draw camera frame onto canvas
+            // Draw current video frame onto canvas
             context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-            // Gather metadata
+            // Gather metadata values
             const now = new Date();
             const dateStr = now.toLocaleDateString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' });
             const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             const description = txtDescription.value.trim() || "Sin descripción registrada";
 
             let speedVal = "0.0 km/h";
-            let latText = "S/D";
-            let lngText = "S/D";
-            let mapsLink = "";
+            let latText = "0.000000";
+            let lngText = "0.000000";
 
             if (currentPosition) {
-                const lat = currentPosition.coords.latitude;
-                const lng = currentPosition.coords.longitude;
-                latText = lat.toFixed(6);
-                lngText = lng.toFixed(6);
-                mapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+                latText = currentPosition.coords.latitude.toFixed(6);
+                lngText = currentPosition.coords.longitude.toFixed(6);
 
                 if (currentPosition.coords.speed !== null && currentPosition.coords.speed >= 0) {
                     speedVal = (currentPosition.coords.speed * 3.6).toFixed(1) + " km/h";
                 }
             }
 
-            // Banner height scaling based on resolution
-            const bannerHeight = Math.max(190, Math.floor(canvas.height * 0.26));
+            // Define the 6 explicit lines
+            const line1 = `Información: ${description}`;
+            const line2 = `Fecha: ${dateStr}`;
+            const line3 = `Hora: ${timeStr}`;
+            const line4 = `Velocidad: ${speedVal}`;
+            const line5 = `Lat: ${latText}`;
+            const line6 = `Lng: ${lngText}`;
+
+            // Calculate dynamic sizing for 6 distinct lines
+            const fontSize = Math.max(14, Math.floor(canvas.height / 46));
+            const paddingVertical = Math.floor(fontSize * 0.8);
+            const lineSpacing = Math.floor(fontSize * 1.35);
+            const bannerHeight = (fontSize * 6) + (lineSpacing * 5) + (paddingVertical * 2);
             const bannerY = canvas.height - bannerHeight;
 
-            // Semi-transparent banner background
-            context.fillStyle = "rgba(11, 15, 25, 0.88)";
+            // Semi-transparent background banner
+            context.fillStyle = "rgba(11, 15, 25, 0.92)";
             context.fillRect(0, bannerY, canvas.width, bannerHeight);
 
-            // Top accent border line for banner
+            // Top accent line for banner
             context.strokeStyle = "#38bdf8";
-            context.lineWidth = Math.max(3, Math.floor(canvas.width / 300));
+            context.lineWidth = Math.max(3, Math.floor(canvas.width / 350));
             context.beginPath();
             context.moveTo(0, bannerY);
             context.lineTo(canvas.width, bannerY);
             context.stroke();
 
-            // Font sizing configuration
-            const fontSize = Math.max(16, Math.floor(canvas.height / 35));
+            // Render each of the 6 lines in separate rows
+            const paddingLeft = Math.floor(canvas.width * 0.03);
+            let currentTextY = bannerY + paddingVertical + fontSize;
+
             context.font = `bold ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+
+            // Line 1: Info (White)
             context.fillStyle = "#ffffff";
+            context.fillText(line1, paddingLeft, currentTextY);
 
-            let paddingLeft = Math.floor(canvas.width * 0.03);
-            let currentTextY = bannerY + Math.floor(fontSize * 1.3);
-            const lineSpacing = Math.floor(fontSize * 1.45);
-
-            // Line 1: Information / Description
-            context.fillText(`📋 Info: ${description}`, paddingLeft, currentTextY);
-
-            // Line 2: Date
+            // Line 2: Fecha (Cyan)
             currentTextY += lineSpacing;
             context.fillStyle = "#38bdf8";
-            context.fillText(`📅 Fecha: ${dateStr}`, paddingLeft, currentTextY);
+            context.fillText(line2, paddingLeft, currentTextY);
 
-            // Line 3: Time
+            // Line 3: Hora (Cyan)
             currentTextY += lineSpacing;
             context.fillStyle = "#38bdf8";
-            context.fillText(`⏰ Hora: ${timeStr}`, paddingLeft, currentTextY);
+            context.fillText(line3, paddingLeft, currentTextY);
 
-            // Line 4: Speed + Coordinates / Google Maps link
+            // Line 4: Velocidad (Yellow/Orange)
             currentTextY += lineSpacing;
-            context.fillStyle = "#cbd5e1";
-            context.font = `${Math.floor(fontSize * 0.85)}px 'Segoe UI', Arial, sans-serif`;
-            context.fillText(`🚀 Velocidad: ${speedVal} | 📍 Lat: ${latText}, Lng: ${lngText}`, paddingLeft, currentTextY);
+            context.fillStyle = "#facc15";
+            context.fillText(line4, paddingLeft, currentTextY);
+
+            // Line 5: Lat (Green)
+            currentTextY += lineSpacing;
+            context.fillStyle = "#4ade80";
+            context.fillText(line5, paddingLeft, currentTextY);
+
+            // Line 6: Lng (Green)
+            currentTextY += lineSpacing;
+            context.fillStyle = "#4ade80";
+            context.fillText(line6, paddingLeft, currentTextY);
 
             // Generate JPEG data URL
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.94);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
             // Populate preview modal
             document.getElementById('previewImage').src = dataUrl;
             
-            const metaSummary = `Info: ${description} | Fecha: ${dateStr} | Hora: ${timeStr} | Vel: ${speedVal} | Coords: ${latText}, ${lngText} | Maps: ${mapsLink}`;
-            document.getElementById('previewMetaText').textContent = metaSummary;
+            const metaSummaryLines = `${line1}\n${line2}\n${line3}\n${line4}\n${line5}\n${line6}`;
+            document.getElementById('previewMetaText').textContent = metaSummaryLines;
 
             const downloadBtn = document.getElementById('btnDownloadImage');
             downloadBtn.href = dataUrl;
@@ -475,31 +530,26 @@
             initCamera();
             initGeolocation();
 
-            // Shutter capture button click
             document.getElementById('btnCapture').addEventListener('click', () => {
                 captureAndStampImage();
             });
 
-            // Switch camera button click
             document.getElementById('btnSwitchCamera').addEventListener('click', () => {
                 useFrontCamera = !useFrontCamera;
                 initCamera();
             });
 
-            // Refresh GPS button click
             document.getElementById('btnRefreshGps').addEventListener('click', () => {
                 initGeolocation();
                 showCustomMessage("Buscando actualización de señal GPS...", "success");
             });
 
-            // Info modal button click
             document.getElementById('btnInfoModal').addEventListener('click', () => {
                 infoModal.show();
             });
 
-            // Gallery info button click
             document.getElementById('btnGalleryInfo').addEventListener('click', () => {
-                showCustomMessage("Las fotos capturadas se guardarán en la galería o carpeta de descargas de su dispositivo.", "success");
+                showCustomMessage("Las fotos capturadas se guardarán automáticamente en la galería o carpeta de descargas de su dispositivo.", "success");
             });
         });
     </script>
