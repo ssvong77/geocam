@@ -277,7 +277,7 @@
             return `${hours}:${minutes}:${seconds}`;
         }
 
-        // Tomar Foto y Estampar en 2 Columnas
+        // Tomar Foto y Estampar en 2 Columnas con Fuente Ampliada
         btnTakephoto.addEventListener('click', () => {
             if (!videoElement.videoWidth || !videoElement.videoHeight) {
                 alert("La cámara aún no está lista.");
@@ -299,11 +299,11 @@
             const latText = `Lat: ${currentGPSData.hasFix ? currentGPSData.lat.toFixed(6) : 'N/A'}`;
             const lngText = `Lng: ${currentGPSData.hasFix ? currentGPSData.lng.toFixed(6) : 'N/A'}`;
 
-            // Configurar diseño de 2 columnas
-            const baseFontSize = Math.max(16, Math.floor(canvasOutput.width / 45));
-            const lineSpacing = baseFontSize * 1.45;
+            // Configurar diseño de 2 columnas con fuente ampliada (+2 puntos)
+            const baseFontSize = Math.max(20, Math.floor(canvasOutput.width / 38));
+            const lineSpacing = baseFontSize * 1.5;
             const padding = baseFontSize * 1.2;
-            const maxRows = 3; // 3 filas por columna
+            const maxRows = 3; 
             const bannerHeight = (maxRows * lineSpacing) + (padding * 2);
 
             const bannerX = padding;
@@ -313,14 +313,14 @@
 
             // 2. Dibujar placa de fondo translúcida
             ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-            ctx.roundRect ? ctx.beginPath() || ctx.roundRect(bannerX, bannerY, bannerWidth, bannerHeight, 12) : ctx.fillRect(bannerX, bannerY, bannerWidth, bannerHeight);
+            ctx.roundRect ? ctx.beginPath() || ctx.roundRect(bannerX, bannerY, bannerWidth, bannerHeight, 14) : ctx.fillRect(bannerX, bannerY, bannerWidth, bannerHeight);
             ctx.fill();
 
             ctx.strokeStyle = "rgba(56, 189, 248, 0.6)";
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2.5;
             ctx.stroke();
 
-            // Configurar fuente
+            // Configurar fuente grande
             ctx.font = `bold ${baseFontSize}px system-ui, sans-serif`;
 
             // --- COLUMNA IZQUIERDA (Info, Fecha, Hora) ---
