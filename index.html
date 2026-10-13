@@ -46,7 +46,7 @@
         }
         .interactive-panel {
             pointer-events: auto;
-            background: rgba(15, 23, 42, 0.75);
+            background: rgba(15, 23, 42, 0.78);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -126,12 +126,17 @@
             </button>
         </div>
 
-        <!-- Panel Inferior: Solo Línea 1 (Información / Descripción) + Botón Disparador -->
+        <!-- Panel Inferior: Línea 1 (Información / Descripción) + Botón Disparador -->
         <div class="interactive-panel mb-2">
             <div class="mb-3">
-                <label for="input-info" class="form-label label-custom-title mb-1">
-                    <i class="bi bi-pencil-square me-1"></i> Información / Descripción (Línea 1):
-                </label>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="input-info" class="form-label label-custom-title m-0">
+                        <i class="bi bi-pencil-square me-1"></i> Información / Descripción:
+                    </label>
+                    <button type="button" id="btn-clear-info" class="btn btn-sm btn-outline-info py-0 px-2" style="font-size: 0.75rem;" title="Limpiar campo">
+                        <i class="bi bi-trash3"></i> Limpiar
+                    </button>
+                </div>
                 <input type="text" id="input-info" class="form-control form-control-custom" placeholder="Ej: Auditoría de obra - Sector Norte">
             </div>
 
@@ -144,7 +149,7 @@
 
     </div>
 
-    <!-- Modal de Previsualización y Descarga -->
+    <!-- Modal de Previsualización y Descarga con Opciones de Flujo -->
     <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content bg-dark text-white border-secondary">
@@ -153,15 +158,24 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center p-2">
-                    <img id="preview-image" src="" alt="Foto Capturada" class="img-fluid rounded border border-secondary shadow" style="max-height: 65vh;">
+                    <img id="preview-image" src="" alt="Foto Capturada" class="img-fluid rounded border border-secondary shadow" style="max-height: 60vh;">
                 </div>
-                <div class="modal-footer border-secondary justify-content-between">
-                    <button type="button" class="btn btn-outline-light px-4" data-bs-dismiss="modal">
-                        <i class="bi bi-arrow-left me-1"></i> Repetir
-                    </button>
-                    <a id="btn-download" href="#" class="btn btn-info text-dark fw-bold px-4">
-                        <i class="bi bi-download me-1"></i> Descargar Foto
-                    </a>
+                <div class="modal-footer border-secondary flex-column gap-2">
+                    <!-- Fila 1 de Botones de Acción -->
+                    <div class="d-flex w-100 justify-content-between gap-2">
+                        <a id="btn-download" href="#" class="btn btn-success flex-grow-1 fw-bold">
+                            <i class="bi bi-download me-1"></i> Descargar Foto
+                        </a>
+                    </div>
+                    <!-- Fila 2: Opciones de Repetir o Nueva Tarea -->
+                    <div class="d-flex w-100 justify-content-between gap-2">
+                        <button type="button" class="btn btn-outline-light flex-grow-1" data-bs-dismiss="modal" title="Mantiene la info actual">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Repetir (Misma Info)
+                        </button>
+                        <button type="button" id="btn-new-shot-clear" class="btn btn-outline-warning flex-grow-1" data-bs-dismiss="modal" title="Limpia la info y toma otra">
+                            <i class="bi bi-plus-circle me-1"></i> Nueva (Borrar Info)
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -177,18 +191,21 @@
             lat: 0,
             lng: 0,
             speed: 0,
+            accuracy: 0,
             hasFix: false
         };
 
         const videoElement = document.getElementById('video-element');
         const gpsStatus = document.getElementById('gps-status');
         const inputInfo = document.getElementById('input-info');
+        const btnClearInfo = document.getElementById('btn-clear-info');
         const btnTakephoto = document.getElementById('btn-take-photo');
         const btnSwitchCamera = document.getElementById('btn-switch-camera');
         const canvasOutput = document.getElementById('canvas-output');
         const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
         const previewImage = document.getElementById('preview-image');
         const btnDownload = document.getElementById('btn-download');
+        const btnNewShotClear = document.getElementById('btn-new-shot-clear');
 
         window.addEventListener('DOMContentLoaded', () => {
             const savedInfo = localStorage.getItem('gps_cam_info');
@@ -199,8 +216,24 @@
             initGPS();
         });
 
+        // Guardar automáticamente en LocalStorage
+        inputInfo.value;
         inputInfo.addEventListener('input', () => {
             localStorage.setItem('gps_cam_info', inputInfo.value);
+        });
+
+        // Botón para limpiar campo de información manualmente
+        btnClearInfo.addEventListener('click', () => {
+            inputInfo.value = '';
+            localStorage.removeItem('gps_cam_info');
+            inputInfo.focus();
+        });
+
+        // Botón en Modal para tomar nueva foto limpiando la descripción
+        btnNewShotClear.addEventListener('click', () => {
+            inputInfo.value = '';
+            localStorage.removeItem('gps_cam_info');
+            inputInfo.focus();
         });
 
         async function initCamera() {
@@ -241,9 +274,10 @@
                         currentGPSData.speed = position.coords.speed !== null && position.coords.speed >= 0 
                             ? position.coords.speed * 3.6 
                             : 0;
+                        currentGPSData.accuracy = position.coords.accuracy || 0;
                         currentGPSData.hasFix = true;
 
-                        gpsStatus.innerHTML = `<i class="bi bi-geo-alt-fill text-success me-1"></i> GPS Conectado (${currentGPSData.lat.toFixed(4)}, ${currentGPSData.lng.toFixed(4)})`;
+                        gpsStatus.innerHTML = `<i class="bi bi-geo-alt-fill text-success me-1"></i> GPS (±${Math.round(currentGPSData.accuracy)}m)`;
                     },
                     (error) => {
                         console.warn("Error de GPS:", error.message);
@@ -277,7 +311,7 @@
             return `${hours}:${minutes}:${seconds}`;
         }
 
-        // Función auxiliar para ajustar textos largos en múltiples líneas dentro de un ancho máximo
+        // Función para ajustar texto en múltiples líneas
         function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
             const words = text.split(' ');
             let line = '';
@@ -301,11 +335,16 @@
             return linesCount;
         }
 
-        // Tomar Foto y Estampar con Ajuste Dinámico de Info y Combinación de Filas
+        // Tomar Foto y Estampar
         btnTakephoto.addEventListener('click', () => {
             if (!videoElement.videoWidth || !videoElement.videoHeight) {
                 alert("La cámara aún no está lista.");
                 return;
+            }
+
+            // Vibración táctil si el dispositivo lo soporta
+            if (navigator.vibrate) {
+                navigator.vibrate(60);
             }
 
             canvasOutput.width = videoElement.videoWidth;
@@ -315,7 +354,7 @@
             // 1. Dibujar fotograma de la cámara
             ctx.drawImage(videoElement, 0, 0, canvasOutput.width, canvasOutput.height);
 
-            // Preparar textos combinados
+            // Preparar textos
             const infoText = `Info: ${inputInfo.value.trim() || "Sin descripción"}`;
             const dateTimeText = `${getFormattedDate()} - ${getFormattedTime()}`;
             const speedText = `Vel: ${currentGPSData.speed.toFixed(1)} km/h`;
@@ -332,11 +371,9 @@
             const bannerWidth = canvasOutput.width - (padding * 2);
             const columnWidth = bannerWidth / 2 - padding * 0.5;
 
-            // Configurar fuente para medir líneas de la descripción
             ctx.font = `bold ${baseFontSize}px system-ui, sans-serif`;
 
-            // Medir cuántas líneas ocupará el texto de Info en la columna izquierda
-            // Creamos un canvas temporal o usamos measureText simulado
+            // Calcular líneas de la descripción
             const words = infoText.split(' ');
             let testLine = '';
             let infoLines = 1;
@@ -350,9 +387,8 @@
                 }
             }
 
-            // Filas totales requeridas en la columna izquierda: infoLines + 1 (para Fecha/Hora)
             const totalRowsLeft = infoLines + 1;
-            const totalRowsRight = 2; // Fila 1: Velocidad, Fila 2: Lat/Lng
+            const totalRowsRight = 2;
             const maxRows = Math.max(totalRowsLeft, totalRowsRight);
 
             const bannerHeight = (maxRows * lineSpacing) + (padding * 2);
@@ -367,33 +403,29 @@
             ctx.lineWidth = 2.5;
             ctx.stroke();
 
-            // --- COLUMNA IZQUIERDA (Info multilínea + Fecha/Hora combinadas) ---
+            // --- COLUMNA IZQUIERDA ---
             let leftX = bannerX + padding;
             let currentY = bannerY + padding + baseFontSize;
 
-            // Dibujar Info con ajuste de línea automático
             ctx.fillStyle = "#38bdf8";
             let linesDrawn = wrapText(ctx, infoText, leftX, currentY, columnWidth, lineSpacing);
             currentY += (linesDrawn * lineSpacing);
 
-            // Dibujar Fecha y Hora juntas
             ctx.fillStyle = "#ffffff";
             ctx.fillText(dateTimeText, leftX, currentY);
 
-            // --- COLUMNA DERECHA (Velocidad + Lat/Lng combinadas) ---
+            // --- COLUMNA DERECHA ---
             let rightX = bannerX + bannerWidth / 2 + (padding * 0.5);
             let rightY = bannerY + padding + baseFontSize;
 
-            // Fila 1: Velocidad
             ctx.fillStyle = "#4ade80";
             ctx.fillText(speedText, rightX, rightY);
             rightY += lineSpacing;
 
-            // Fila 2: Lat y Lng juntas
             ctx.fillStyle = "#facc15";
             ctx.fillText(coordsText, rightX, rightY);
 
-            // 3. Exportar imagen y abrir previsualización
+            // 3. Exportar imagen y previsualizar
             const dataUrl = canvasOutput.toDataURL('image/jpeg', 0.92);
             previewImage.src = dataUrl;
 
